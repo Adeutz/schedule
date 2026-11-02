@@ -46,9 +46,40 @@
   .sub { color: var(--muted); font-size: 14px; margin: 0; }
   .note { background: var(--note); border-radius: 10px; padding: 10px 14px; margin: 14px 0 0; }
   .frame { margin-top: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
-  .frame img { display: block; width: 100%; height: auto; border-radius: 8px; cursor: zoom-in; }
-  .frame.zoomed img { width: 200%; max-width: none; cursor: zoom-out; }
-  .tip { color: var(--muted); font-size: 13px; text-align: center; margin: 6px 0 0; }
+  .pic { position: relative; cursor: pointer; }      /* a pointer: iPhones only send taps on those */
+  .pic img { display: block; width: 100%; height: auto; border-radius: 8px; }
+  .frame.zoomed .pic { width: 200%; }
+  .mark { position: absolute; border: 2.5px solid var(--accent); border-radius: 6px; pointer-events: none; }
+  .tools { display: flex; align-items: center; margin: 2px 0 0; }
+  .tip { color: var(--muted); font-size: 13px; margin: 0; }
+  .zoom {
+    margin-left: auto; font: inherit; font-size: 14px; color: var(--accent); background: none;
+    border: 0; padding: 10px 0 10px 16px;
+  }
+  .day {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 14px 10px; margin-top: 6px;
+  }
+  .day-head { display: flex; align-items: center; gap: 8px; }
+  .day-head > div { flex: 1; min-width: 0; text-align: center; }
+  .day-head h2 { margin: 0; font-size: 17px; }
+  .day-head .sub { margin-top: 2px; }
+  .step {
+    flex: none; width: 44px; height: 44px; padding: 0; border-radius: 22px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit;
+    font-size: 24px; line-height: 1;
+  }
+  .step:disabled { opacity: .3; }
+  .day .note { margin-top: 12px; font-size: 15px; }
+  .times { list-style: none; padding: 0; margin: 8px 0 0; }
+  .times li {
+    display: grid; grid-template-columns: 5.3em 1fr; gap: 12px; margin: 0; padding: 9px 0;
+    border-top: 1px solid var(--line);
+  }
+  .times li:first-child { border-top: 0; }
+  .times .at { color: var(--muted); text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .times small { display: block; color: var(--muted); font-size: 14px; margin-top: 1px; }
+  .zone { font-size: 13px; margin: 4px 0 0; padding-top: 8px; border-top: 1px solid var(--line); }
   .legend { color: var(--muted); font-size: 13px; margin: 22px 0 0; }
   .foot {
     color: var(--muted); font-size: 13px; margin: 18px 0 0; padding-top: 12px;
@@ -97,8 +128,23 @@
   <p class="sub" id="span"></p>
   <p class="sub" id="updated"></p>
   <div class="note" id="note" hidden><b id="note-label"></b> <span id="note-text"></span></div>
-  <div class="frame" id="frame"><img id="picture" alt=""></div>
-  <p class="tip">Tap the picture to zoom in.</p>
+  <div class="frame" id="frame">
+    <div class="pic" id="pic"><img id="picture" alt=""><div class="mark" id="mark" hidden></div></div>
+  </div>
+  <div class="tools">
+    <p class="tip" id="tip">Tap a day for its details.</p>
+    <button class="zoom" id="zoom" type="button">Zoom in</button>
+  </div>
+  <section class="day" id="day" hidden aria-live="polite">
+    <div class="day-head">
+      <button class="step" id="prev" type="button" aria-label="Day before">‹</button>
+      <div><h2 id="day-title"></h2><p class="sub" id="day-sub"></p></div>
+      <button class="step" id="next" type="button" aria-label="Day after">›</button>
+    </div>
+    <p class="note" id="day-note" hidden></p>
+    <ol class="times" id="day-items"></ol>
+    <p class="sub zone">Times are Central time.</p>
+  </section>
   <div id="weeks"></div>
   <p class="legend" id="legend"></p>
   <p class="foot">Updates whenever a new schedule is sent.</p>
