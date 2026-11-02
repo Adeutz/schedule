@@ -51,11 +51,9 @@
   .tip { color: var(--muted); font-size: 13px; text-align: center; margin: 6px 0 0; }
   .legend { color: var(--muted); font-size: 13px; margin: 22px 0 0; }
   .foot {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
-    color: var(--muted); font-size: 13px; margin-top: 18px; padding-top: 12px;
+    color: var(--muted); font-size: 13px; margin: 18px 0 0; padding-top: 12px;
     border-top: 1px solid var(--line);
   }
-  .link { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; cursor: pointer; }
   .card {
     background: var(--card); border: 1px solid var(--line); border-radius: 14px;
     padding: 22px 18px; margin: 10vh auto 0; max-width: 420px;
@@ -70,9 +68,11 @@
     width: 100%; margin-top: 12px; padding: 12px; border: 0; border-radius: 10px;
     background: var(--accent); color: #fff; font: inherit; font-size: 17px; font-weight: 600;
   }
+  .code { font-size: 28px; letter-spacing: .35em; text-align: center; -webkit-text-security: disc; }
   .go:disabled { opacity: .6; }
   .wrong { color: var(--bad); margin: 12px 0 0; }
-  .hint { background: var(--note); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 16px 0 0; }
+  .once { margin-top: 14px; }
+  .hint { background: var(--note); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 14px 0 0; }
 </style>
 </head>
 <body>
@@ -81,14 +81,14 @@
 <main id="lock" hidden>
   <form class="card" id="unlock" autocomplete="off">
     <h1>Schedule</h1>
-    <p class="sub">Type the passphrase. This phone remembers it, so you only need it once.</p>
-    <label for="passphrase">Passphrase</label>
-    <input id="passphrase" type="text" autocapitalize="none" autocorrect="off" spellcheck="false"
-           autocomplete="off" enterkeyhint="go">
+    <p class="hint" id="hint" hidden>First add this to your Home Screen: tap the Share button, then
+      <b>Add to Home Screen</b>. Then open it from there and enter the code.</p>
+    <label for="passphrase">Code</label>
+    <input id="passphrase" class="code" type="text" inputmode="numeric" pattern="[0-9]*"
+           autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off">
     <button class="go" id="go" type="submit">Open</button>
-    <p class="wrong" id="wrong" hidden>That passphrase didn't work. Check the words and try again.</p>
-    <p class="hint" id="hint" hidden>To keep it on your home screen: tap the Share button, then
-      <b>Add to Home Screen</b>, and open it from there.</p>
+    <p class="wrong" id="wrong" hidden>That code didn't work. Try again.</p>
+    <p class="sub once">This phone remembers it, so it's only needed once.</p>
   </form>
 </main>
 
@@ -101,10 +101,7 @@
   <p class="tip">Tap the picture to zoom in.</p>
   <div id="weeks"></div>
   <p class="legend" id="legend"></p>
-  <div class="foot">
-    <span>Updates whenever a new schedule is sent.</span>
-    <button class="link" id="forget" type="button">Lock</button>
-  </div>
+  <p class="foot">Updates whenever a new schedule is sent.</p>
 </main>
 
 <main id="trouble" hidden>
