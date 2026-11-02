@@ -1,11 +1,13 @@
-// The schedule page: unlocked once with the passphrase, then always the
-// latest schedule — looked for again each time the page is opened
+// The schedule page: unlocked once with the code, then always the latest
+// schedule — looked for again each time the page is opened
 import { words, fromBase64, toBase64, keyFor, open } from './crypto.js';
 
-const KEY = 'schedule-key';     // {salt, key}: the passphrase's key, on this phone only
+const KEY = 'schedule-key';     // {salt, key}: the code's key, on this phone only
+const TRY_AT = 6;               // digits typed: try the code without waiting for Open
 const $ = id => document.getElementById(id);
 let box = null;                 // data.json as last fetched, still encrypted
 let shown = null;               // ...and the one on screen (its iv)
+let trying = false;
 
 function savedKey() {
   try {
@@ -80,30 +82,36 @@ async function refresh() {
   screen('lock');
 }
 
-$('unlock').addEventListener('submit', async event => {
-  event.preventDefault();
-  const passphrase = $('passphrase').value;
-  if (!words(passphrase) || !box) return;
+async function unlock(code) {
+  if (trying || !box || !words(code)) return;
+  trying = true;
   $('wrong').hidden = true;
   $('go').disabled = true;
   try {
-    const key = await keyFor(passphrase, box.kdf);
+    const key = await keyFor(code, box.kdf);
     const data = await open(box, key);
+    // Kept for good: the code is never asked for again on this phone
     localStorage.setItem(KEY, JSON.stringify({ salt: box.kdf.salt, key: toBase64(key) }));
-    $('passphrase').value = '';
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
     $('passphrase').blur();
     show(data);
   } catch {
     $('wrong').hidden = false;
   } finally {
+    $('passphrase').value = '';
     $('go').disabled = false;
+    trying = false;
   }
-});
+}
 
-$('forget').addEventListener('click', () => {
-  localStorage.removeItem(KEY);
-  shown = null;
-  screen('lock');
+$('unlock').addEventListener('submit', event => {
+  event.preventDefault();
+  unlock($('passphrase').value);
+});
+// The number pad has no Go key: the 6th digit is enough
+$('passphrase').addEventListener('input', () => {
+  const code = $('passphrase').value;
+  if (code.replace(/\D/g, '').length >= TRY_AT) unlock(code);
 });
 $('retry').addEventListener('click', refresh);
 $('picture').addEventListener('click', () => $('frame').classList.toggle('zoomed'));
