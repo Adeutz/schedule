@@ -1,6 +1,7 @@
 // The schedule page: unlocked once with the code, then always the latest
 // schedule — looked for again each time the page is opened
 import { words, fromBase64, toBase64, keyFor, open } from './crypto.js';
+import { dayAt, isoDate, firstPick } from './days.js';
 
 const KEY = 'schedule-key';     // {salt, key}: the code's key, on this phone only
 const TRY_AT = 6;               // digits typed: try the code without waiting for Open
@@ -8,6 +9,9 @@ const $ = id => document.getElementById(id);
 let box = null;                 // data.json as last fetched, still encrypted
 let shown = null;               // ...and the one on screen (its iv)
 let trying = false;
+let days = [];                  // each day in detail, and where it is on the picture
+let boxes = [];
+let picked = null;              // the day whose details are showing
 
 function savedKey() {
   try {
@@ -57,7 +61,48 @@ function show(data) {
     return [element('h2', heading), list];
   }));
   $('legend').textContent = data.legend;
+  days = data.days || [];
+  boxes = data.boxes || [];
+  $('tip').hidden = !days.length;
+  // A day named in the address, the one already showing, today, or the first
+  pick(firstPick(days, decodeURIComponent(location.hash.slice(1)), picked, isoDate(new Date())));
   screen('view');
+}
+
+// One day's details under the picture, and that day outlined on it
+function pick(date) {
+  const i = days.findIndex(day => day.date === date);
+  $('day').hidden = i < 0;
+  $('mark').hidden = true;
+  if (i < 0) return;
+  picked = date;
+  const day = days[i];
+  $('day-title').textContent = day.title;
+  $('day-sub').textContent = day.sub;
+  $('day-note').hidden = !day.note;
+  $('day-note').textContent = day.note || '';
+  $('day-items').replaceChildren(...day.items.map(([time, what, more]) => {
+    const item = document.createElement('li');
+    const words = element('span', what);
+    if (more) words.append(element('small', more));
+    item.append(element('span', time), words);
+    item.firstChild.className = 'at';
+    return item;
+  }));
+  $('prev').disabled = i === 0;
+  $('next').disabled = i === days.length - 1;
+  const spot = boxes.find(b => b[0] === date);
+  if (spot) {
+    const [, x0, y0, x1, y1] = spot;
+    Object.assign($('mark').style, { left: `${x0 * 100}%`, top: `${y0 * 100}%`,
+                                     width: `${(x1 - x0) * 100}%`, height: `${(y1 - y0) * 100}%` });
+    $('mark').hidden = false;
+  }
+}
+
+function step(by) {
+  const next = days[days.findIndex(day => day.date === picked) + by];
+  if (next) pick(next.date);
 }
 
 async function refresh() {
@@ -114,7 +159,22 @@ $('passphrase').addEventListener('input', () => {
   if (code.replace(/\D/g, '').length >= TRY_AT) unlock(code);
 });
 $('retry').addEventListener('click', refresh);
-$('picture').addEventListener('click', () => $('frame').classList.toggle('zoomed'));
+// Tapping a day on the picture shows its details
+$('pic').addEventListener('click', event => {
+  const rect = $('picture').getBoundingClientRect();
+  const date = dayAt(boxes, (event.clientX - rect.left) / rect.width, (event.clientY - rect.top) / rect.height);
+  if (!date) return;
+  pick(date);
+  $('day').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+$('prev').addEventListener('click', () => step(-1));
+$('next').addEventListener('click', () => step(1));
+$('zoom').addEventListener('click', () => {
+  const zoomed = $('frame').classList.toggle('zoomed');
+  $('zoom').textContent = zoomed ? 'Zoom out' : 'Zoom in';
+  const spot = boxes.find(b => b[0] === picked);     // the picked day stays in view
+  if (zoomed && spot) $('frame').scrollLeft = spot[1] * $('pic').offsetWidth - 16;
+});
 // Back on screen (opened from the home screen again): look for a newer one
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) refresh();
